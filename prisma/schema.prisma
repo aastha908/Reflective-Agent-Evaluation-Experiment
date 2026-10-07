@@ -1,0 +1,296 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Experiment {
+  id          String   @id @default(uuid())
+  title       String
+  description String   @default("")
+  researcher  String   @default("Local researcher")
+  tags        String   @default("[]")
+  notes       String   @default("")
+  createdAt   DateTime @default(now())
+  runs        ExperimentRun[]
+  snapshots  ExperimentConfigurationSnapshot[]
+}
+
+model ExperimentConfigurationSnapshot {
+  id             String     @id @default(uuid())
+  experimentId   String
+  experiment     Experiment @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+  version        Int
+  config         String
+  configHash     String
+  createdAt      DateTime   @default(now())
+  runs           ExperimentRun[]
+  @@unique([experimentId, version])
+}
+
+model Scenario {
+  id          String   @id
+  title       String
+  domain      String
+  description String
+  currentVersion Int @default(1)
+  versions    ScenarioVersion[]
+  runs        ExperimentRun[]
+}
+
+model ScenarioVersion {
+  id          String   @id @default(uuid())
+  scenarioId  String
+  scenario    Scenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+  version     Int
+  definition  String
+  createdAt   DateTime @default(now())
+  @@unique([scenarioId, version])
+}
+
+model Condition {
+  id       String @id
+  title    String
+  versions ConditionVersion[]
+}
+
+model ConditionVersion {
+  id          String   @id @default(uuid())
+  conditionId String
+  condition   Condition @relation(fields: [conditionId], references: [id], onDelete: Cascade)
+  version     Int
+  systemPrompt String
+  createdAt   DateTime @default(now())
+  @@unique([conditionId, version])
+}
+
+model ToolDefinition {
+  id          String @id @default(uuid())
+  scenarioId  String
+  name        String
+  description String
+  schema      String
+  @@unique([scenarioId, name])
+}
+
+model ExperimentRun {
+  id             String   @id @default(uuid())
+  experimentId   String
+  experiment     Experiment @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+  snapshotId     String
+  snapshot       ExperimentConfigurationSnapshot @relation(fields: [snapshotId], references: [id])
+  scenarioId     String
+  scenario       Scenario @relation(fields: [scenarioId], references: [id])
+  conditionId    String
+  status         String   @default("queued")
+  provider       String   @default("mock")
+  model          String   @default("mock-deterministic-v1")
+  replicate      Int
+  runOrder       Int
+  policyMode     String
+  config         String
+  finalMessage   String   @default("")
+  startedAt      DateTime?
+  completedAt    DateTime?
+  error          String?
+  createdAt      DateTime @default(now())
+  turns          AgentTurn[]
+  toolCalls      ToolCall[]
+  transitions    StateTransition[]
+  metrics        RunMetric[]
+  humanReviews   HumanReview[]
+  requestMetadata ModelRequestMetadata[]
+  responseMetadata ModelResponseMetadata[]
+  stateSnapshots EnvironmentStateSnapshot[]
+  automatedScores AutomatedScore[]
+}
+
+model AgentTurn {
+  id          String @id @default(uuid())
+  runId       String
+  run         ExperimentRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  turnNumber  Int
+  role        String
+  content     String
+  rawOutput   String
+  inputTokens Int?
+  outputTokens Int?
+  latencyMs   Int?
+  createdAt   DateTime @default(now())
+  @@unique([runId, turnNumber])
+}
+
+model ToolCall {
+  id             String @id @default(uuid())
+  runId          String
+  run            ExperimentRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  turnNumber     Int
+  toolName       String
+  arguments      String
+  validation     String
+  policyOutcome  String
+  executionOutcome String
+  result         String
+  stateBefore    String
+  stateAfter     String
+  createdAt      DateTime @default(now())
+  transitions    StateTransition[]
+}
+
+model StateTransition {
+  id        String @id @default(uuid())
+  runId     String
+  run       ExperimentRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  toolCallId String
+  toolCall  ToolCall @relation(fields: [toolCallId], references: [id], onDelete: Cascade)
+  before    String
+  after     String
+  createdAt DateTime @default(now())
+}
+
+model RunMetric {
+  id                String @id @default(uuid())
+  runId             String
+  run               ExperimentRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  name              String
+  value             String
+  valueType         String
+  source            String
+  confidence        Float?
+  rationale         String
+  computationVersion String @default("1.0.0")
+  createdAt         DateTime @default(now())
+  @@unique([runId, name])
+}
+
+model Researcher {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  email     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model APIProviderConfiguration {
+  id                  String   @id @default(uuid())
+  provider            String   @unique
+  displayName         String
+  baseUrl             String?
+  credentialReference String?
+  enabled             Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model ModelConfiguration {
+  id          String   @id @default(uuid())
+  provider    String
+  model       String
+  modelVersion String?
+  parameters  String   @default("{}")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  @@unique([provider, model, modelVersion])
+}
+
+model ModelRequestMetadata {
+  id          String   @id @default(uuid())
+  runId       String
+  run         ExperimentRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  turnNumber  Int
+  provider    String
+  model       String
+  request     String
+  createdAt   DateTime @default(now())
+}
+
+model ModelResponseMetadata {
+  id           String   @id @default(uuid())
+  runId        String
+  run          ExperimentRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  turnNumber   Int
+  provider     String
+  model        String
+  response     String
+  inputTokens  Int?
+  outputTokens Int?
+  latencyMs    Int?
+  httpStatus   Int?
+  createdAt    DateTime @default(now())
+}
+
+model EnvironmentStateSnapshot {
+  id        String   @id @default(uuid())
+  runId     String
+  run       ExperimentRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  version   Int
+  stage     String
+  state     String
+  createdAt DateTime @default(now())
+  @@unique([runId, version])
+}
+
+model MetricDefinition {
+  id                  String   @id @default(uuid())
+  name                String   @unique
+  description         String
+  valueType           String
+  source              String
+  computationVersion  String
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model AutomatedScore {
+  id                 String   @id @default(uuid())
+  runId              String
+  run                ExperimentRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  metricName         String
+  value              String
+  confidence         Float?
+  rationale          String
+  computationVersion String
+  createdAt          DateTime @default(now())
+}
+
+model ExportJob {
+  id          String   @id @default(uuid())
+  format      String
+  datasets    String
+  filters     String   @default("{}")
+  status      String   @default("queued")
+  filePath    String?
+  error       String?
+  createdAt   DateTime @default(now())
+  completedAt DateTime?
+}
+
+model HumanReview {
+  id          String   @id @default(uuid())
+  runId       String
+  run         ExperimentRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  metric      String
+  reviewerId  String
+  value       String
+  rationale   String
+  createdAt   DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  action    String
+  entityId  String
+  details   String
+  createdAt DateTime @default(now())
+}
+
+model ErrorLog {
+  id        String   @id @default(uuid())
+  runId     String?
+  code      String
+  message   String
+  createdAt DateTime @default(now())
+}
