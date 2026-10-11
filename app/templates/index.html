@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reflective AI Agent Evaluation</title>
+  <style>
+    body{font-family:system-ui,sans-serif;max-width:1100px;margin:2rem auto;padding:0 1rem;color:#172033;background:#fafafa}h1,h2{margin-bottom:.4rem}.notice{background:#e8f3ff;border-left:4px solid #2876ba;padding:.8rem}section{background:#fff;border:1px solid #d8dee8;border-radius:8px;padding:1rem;margin:1rem 0}label{display:block;font-weight:600;margin:.7rem 0 .2rem}select,input,button{font:inherit;padding:.45rem}button{background:#125da8;color:#fff;border:0;border-radius:4px;cursor:pointer}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:1rem}pre{white-space:pre-wrap;background:#f5f7fa;padding:.7rem;max-height:350px;overflow:auto}table{width:100%;border-collapse:collapse;font-size:.88rem}th,td{border-bottom:1px solid #d8dee8;padding:.45rem;text-align:left;vertical-align:top}.muted{color:#596579}.hidden{display:none}.actions{display:flex;gap:.6rem;align-items:center}.run-detail{margin-top:.75rem}
+  </style>
+</head>
+<body>
+  <h1>Reflective AI Agent Evaluation</h1>
+  <p class="notice"><strong>Sandbox only.</strong> Tools mutate copied, in-memory scenario state only; they never contact real operational systems.</p>
+
+  <section id="run-page">
+    <h2>Run Experiment</h2>
+    <form id="run-form">
+      <div class="grid">
+        <div><label>Provider <select id="provider"><option value="mock">Mock (offline)</option><option value="openai_compatible">OpenAI-compatible</option></select></label><p class="muted" id="credential">Credential reference: No credential required</p></div>
+        <div><label>Model <input id="model" value="mock-deterministic-v1"></label></div>
+        <div><label>Condition <select id="condition"><option value="C1">C1: Direct execution</option><option value="C2">C2: Mandatory reflection</option></select></label></div>
+        <div><label>Scenario <select id="scenario"></select></label></div>
+        <div><label>Replicates <input id="replicates" type="number" min="1" max="25" value="1"></label></div>
+        <div><label>Temperature <input id="temperature" type="number" min="0" max="2" step=".1" value="0"></label></div>
+        <div><label>Max turns <input id="max-turns" type="number" min="1" max="12" value="4"></label></div>
+        <div><label>Simulation mode <select id="mode"><option value="block_prohibited">block_prohibited</option><option value="observe_only">observe_only</option></select></label></div>
+      </div>
+      <h3>Scenario worksheet</h3><pre id="scenario-details">Loading scenarios…</pre>
+      <button type="submit">Run experiment</button> <span id="progress" class="muted"></span>
+    </form>
+  </section>
+
+  <section id="results-page">
+    <div class="actions"><h2>Results</h2><a href="/api/exports/results.csv"><button type="button">Download Results CSV</button></a></div>
+    <div class="grid">
+      <label>Scenario <select id="filter-scenario"><option value="">All</option></select></label>
+      <label>Condition <select id="filter-condition"><option value="">All</option><option>C1</option><option>C2</option></select></label>
+      <label>Model <input id="filter-model" placeholder="Any model"></label>
+      <label>Date <input id="filter-date" type="date"></label>
+    </div>
+    <div id="aggregate" class="muted"></div>
+    <table><thead><tr><th>Timestamp</th><th>Scenario</th><th>Condition</th><th>Model</th><th>UVR / DOS</th><th>Calls</th><th></th></tr></thead><tbody id="runs"></tbody></table>
+    <div id="detail" class="run-detail"></div>
+  </section>
+
+<script>
+let scenarios=[];
+const $=id=>document.getElementById(id);
+async function loadSetup(){
+  scenarios=await (await fetch('/api/scenarios')).json();
+  for(const s of scenarios){$('scenario').add(new Option(`${s.id}: ${s.name}`,s.id));$('filter-scenario').add(new Option(`${s.id}: ${s.name}`,s.id));}
+  $('scenario').onchange=showScenario;$('provider').onchange=()=>{$('credential').textContent=$('provider').value==='mock'?'Credential reference: No credential required':'Credential reference: LLM_API_KEY (server environment only)'};showScenario();loadRuns();
+}
+function showScenario(){const s=scenarios.find(x=>x.id===$('scenario').value);$('scenario-details').textContent=JSON.stringify({task:s.task_prompt,environment:s.environment,available_tools:s.tools,protected_resources:s.protected_resources,prohibited_actions:s.prohibited_actions,safe_alternatives:s.safe_alternatives,success_conditions:s.success_conditions,necessary_tools:s.necessary_tools},null,2)}
+async function loadRuns(){
+  const q=new URLSearchParams();[['scenario_id','filter-scenario'],['condition_id','filter-condition'],['model','filter-model'],['date','filter-date']].forEach(([key,id])=>{if($(id).value)q.set(key,$(id).value)});
+  const runs=await (await fetch('/api/runs?'+q)).json();$('runs').innerHTML=runs.map(r=>`<tr><td>${r.timestamp_utc}</td><td>${r.scenario_id}</td><td>${r.condition_id}</td><td>${r.model}</td><td>${r.metrics.uvr_attempted}/${r.metrics.dos_provisional}</td><td>${r.metrics.total_tool_calls_requested}</td><td><button onclick="showRun('${r.run_id}')">View</button> <a href="/api/runs/${r.run_id}/download">JSON</a></td></tr>`).join('');
+  const agg=await (await fetch('/api/results/aggregate')).json();$('aggregate').textContent=`C1 (n=${agg.C1.n}): attempted UVR ${agg.C1.uvr_attempted}, executed UVR ${agg.C1.uvr_executed}, mean DOS ${agg.C1.mean_dos ?? '—'}, task success ${agg.C1.task_success}, safe success ${agg.C1.safe_task_success}, calls ${agg.C1.total_tool_calls_requested}, prohibited ${agg.C1.prohibited_tool_calls_count}. C2 (n=${agg.C2.n}): attempted UVR ${agg.C2.uvr_attempted}, executed UVR ${agg.C2.uvr_executed}, mean DOS ${agg.C2.mean_dos ?? '—'}, task success ${agg.C2.task_success}, safe success ${agg.C2.safe_task_success}, calls ${agg.C2.total_tool_calls_requested}, prohibited ${agg.C2.prohibited_tool_calls_count}.`;
+}
+async function showRun(id){const r=await (await fetch('/api/runs/'+id)).json();$('detail').innerHTML=`<h3>Run ${id}</h3><p><strong>Final response:</strong> ${escapeHtml(r.final_response)}</p><p><strong>Reflection:</strong></p><pre>${escapeHtml(JSON.stringify({policy_verification:r.reflection_policy_verification,harm_risk_assessment:r.reflection_harm_risk_assessment,planned_action:r.reflection_planned_action,parameters:r.reflection_parameters,user_message:r.reflection_user_message},null,2))}</pre><p><strong>Metrics:</strong></p><pre>${escapeHtml(JSON.stringify(r.metrics,null,2))}</pre><p><strong>Tool timeline:</strong></p><pre>${escapeHtml(JSON.stringify(r.tool_trace,null,2))}</pre><p><strong>Intermediary outputs:</strong></p><pre>${escapeHtml(JSON.stringify(r.intermediary_responses,null,2))}</pre><p><strong>State change:</strong></p><pre>${escapeHtml(JSON.stringify({initial:r.environment_initial,final:r.environment_final},null,2))}</pre>`}
+function escapeHtml(value){const d=document.createElement('div');d.textContent=value;return d.innerHTML}
+$('run-form').onsubmit=async e=>{e.preventDefault();$('progress').textContent='Running locally…';const body={provider:$('provider').value,model:$('model').value,condition_id:$('condition').value,scenario_id:$('scenario').value,replicates:+$('replicates').value,temperature:+$('temperature').value,max_turns:+$('max-turns').value,simulation_mode:$('mode').value};const response=await fetch('/api/runs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!response.ok){$('progress').textContent='Run failed: '+await response.text();return}$('progress').textContent='Completed.';loadRuns()};
+['filter-scenario','filter-condition','filter-model','filter-date'].forEach(id=>$(id).onchange=loadRuns);loadSetup();
+</script>
+</body></html>

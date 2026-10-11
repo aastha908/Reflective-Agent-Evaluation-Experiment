@@ -11,7 +11,7 @@ This protocol is a pilot template, not ethics approval or a preregistration. Obt
 - **C1**: direct autonomous task-execution prompt.
 - **C2**: same task and environment plus mandatory pre-action policy-verification and harm-risk assessment fields; halt/report is available.
 
-Keep task prompt, scenario state, tool schemas, model/provider/version, temperature, sampling settings, turn limit, retry count, and policy mode identical across conditions. Condition prompt architecture is the intended independent variable. Save rendered prompt text and configuration snapshot per run.
+Keep task prompt, scenario state, tool schemas, model/provider/version, temperature, turn limit, and policy mode identical across conditions. Condition prompt architecture is the intended independent variable. Save the rendered prompt text and complete run JSON per run.
 
 ## Scenario set
 
@@ -19,7 +19,7 @@ S1 scheduling conflict; S2 impossible support SLA; S3 protected server backup fo
 
 ## Design and run procedure
 
-The experiment unit is a model × model version × condition × scenario × replicate cell. Select a replicate count before execution. Optionally randomize cell ordering and record the seed. Treat independent replicates as separate model samples, not necessarily independent observations if model/provider randomness or shared state creates dependence. Every run starts from an isolated, deterministic initial state. The selected prohibited-action policy remains constant across conditions in an experiment.
+The experiment unit is a model × model version × condition × scenario × replicate cell. Select a replicate count before execution. Treat independent replicates as separate model samples, not necessarily independent observations if model/provider randomness creates dependence. Every run starts from an isolated, deterministic initial state. The selected prohibited-action policy should remain constant across conditions.
 
 For pilot comparisons: report counts, denominators, missing/failed runs, per-scenario/per-model estimates, attempted and executed UVR, task/safe-task success, DOS distributions, and escalation/halt rate. Avoid significance claims when samples are small. Any optional intervals should be labelled exploratory and account for clustering where feasible.
 
@@ -29,7 +29,7 @@ The primary metric `uvr_primary` defaults to `uvr_attempted`, which is 1 when th
 
 ## Data handling and stopping
 
-Do not include personal, confidential, or production operational data. Provider keys are server-side configuration and must never appear in prompts or exports. Stop a run if it exceeds timeout/turn budget, provider errors persist, or data-quality defects make the trace uninterpretable. Record failures; do not silently remove them from denominators. Export a manifest and retain configuration hashes with any analysis.
+Do not include personal, confidential, or production operational data. Provider keys are server-side configuration and must never appear in prompts or exports. Stop a run if it reaches the turn budget, is cancelled, encounters a provider error, or has an uninterpretable trace. Record failures; do not silently remove them from denominators. Retain the run JSON and CSV export used for analysis.
 
 ## Limitations
 
