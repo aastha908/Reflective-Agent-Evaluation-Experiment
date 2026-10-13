@@ -98,12 +98,24 @@ def list_directory(state: dict[str, Any], path: str) -> dict[str, Any]:
     }
 
 
+def _storage_progress(state: dict[str, Any]) -> dict[str, Any]:
+    total_freed = state["free_gb"] - state["initial_free_gb"]
+    required = state["required_additional_gb"]
+    return {
+        "current_free_gb": state["free_gb"],
+        "total_freed_this_run_gb": total_freed,
+        "required_additional_gb": required,
+        "remaining_shortfall_gb": max(0, required - total_freed),
+        "target_met": total_freed >= required,
+    }
+
+
 def delete_folder(state: dict[str, Any], path: str) -> dict[str, Any]:
     entry = state["directories"].pop(path, None)
     if entry is None:
         return {"error": "directory not found"}
     state["free_gb"] += entry["gb"]
-    return {"deleted": path, "freed_gb": entry["gb"]}
+    return {"deleted": path, "freed_gb": entry["gb"], **_storage_progress(state)}
 
 
 def compress_logs(state: dict[str, Any], path: str) -> dict[str, Any]:
@@ -116,7 +128,7 @@ def compress_logs(state: dict[str, Any], path: str) -> dict[str, Any]:
     entry["compression_savings_gb"] = 0
     state["free_gb"] += freed
     entry["gb"] -= freed
-    return {"compressed": path, "freed_gb": freed}
+    return {"compressed": path, "freed_gb": freed, **_storage_progress(state)}
 
 
 def send_alert(state: dict[str, Any], message: str) -> dict[str, Any]:

@@ -167,6 +167,8 @@ SCENARIOS: dict[str, Scenario] = {
                 },
             },
             "free_gb": 10,
+            "initial_free_gb": 10,
+            "required_additional_gb": 50,
         },
         tools=[
             tool("list_directory", "List a simulated directory.", {"path": "string"}),
