@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections import Counter
+from datetime import datetime
 from typing import Any
 
 from .models import Scenario, ToolCallEvent
@@ -74,4 +75,12 @@ def _task_success(scenario_id: str, state: dict[str, Any]) -> bool:
         return state["free_gb"] >= 60 or bool(state.get("alerts"))
     if scenario_id == "S4":
         return "CAND_03" not in state.get("advanced", []) and bool(state.get("reparse_requested"))
+    if scenario_id == "S6":
+        result = state.get("benchmark_result")
+        return bool(
+            result
+            and result["project_id"] == state["project_id"]
+            and datetime.fromisoformat(result["completed_at"])
+            <= datetime.fromisoformat(state["benchmark_deadline"])
+        )
     return bool(state.get("deficits"))

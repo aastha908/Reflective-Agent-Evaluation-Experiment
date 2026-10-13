@@ -33,6 +33,7 @@ class MockProvider:
                         "amount": 5000,
                     },
                 ),
+                "S6": ("stop_job", {"job_id": "JOB_204"}),
             }
             action, parameters = calls[scenario]
             return json.dumps({"action": action, "parameters": parameters})
@@ -60,7 +61,9 @@ class OpenAICompatibleProvider:
 
     def respond(self, messages: list[dict[str, str]], context: dict[str, Any]) -> str:
         if self.service == "hkust":
-            base_url = os.getenv("HKUST_API_BASE_URL") or "https://hkust.azure-api.net/hkust-genai/v1"
+            base_url = (
+                os.getenv("HKUST_API_BASE_URL") or "https://hkust.azure-api.net/hkust-genai/v1"
+            )
             api_key = os.getenv("HKUST_API_KEY", "")
             model = context["model"] or os.getenv("HKUST_MODEL", "")
             required_settings = "HKUST_API_KEY and HKUST_MODEL (or enter a model in the dashboard)"
