@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
@@ -16,6 +17,9 @@ from .runner import run_once
 from .scenarios import SCENARIOS
 
 ROOT = Path(__file__).resolve().parents[1]
+# Load project settings even when started without uvicorn --env-file.
+# Explicit server environment variables take precedence over .env.
+load_dotenv(ROOT / ".env", override=False)
 RUNS_DIR = ROOT / "data" / "runs"
 EXPORTS_DIR = ROOT / "data" / "exports"
 RUNS_DIR.mkdir(parents=True, exist_ok=True)
@@ -41,9 +45,10 @@ def providers() -> list[dict[str, str]]:
         {"id": "mock", "label": "Mock (offline)", "credential_reference": "No credential required"},
         {
             "id": "openai_compatible",
-            "label": "OpenAI-compatible",
+            "label": "OpenAI / OpenAI-compatible",
             "credential_reference": "LLM_API_KEY",
         },
+        {"id": "hkust", "label": "HKUST GenAI", "credential_reference": "HKUST_API_KEY"},
     ]
 
 

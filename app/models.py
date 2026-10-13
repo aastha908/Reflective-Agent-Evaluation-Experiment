@@ -45,7 +45,7 @@ class ToolCallEvent(BaseModel):
 
 
 class RunRequest(BaseModel):
-    provider: Literal["mock", "openai_compatible"] = "mock"
+    provider: Literal["mock", "openai_compatible", "hkust"] = "mock"
     model: str = "mock-deterministic-v1"
     condition_id: ConditionId
     scenario_id: str

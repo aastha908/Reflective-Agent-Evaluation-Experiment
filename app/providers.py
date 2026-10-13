@@ -1,4 +1,4 @@
-"""A deterministic test provider and one optional OpenAI-compatible adapter."""
+"""A deterministic test provider and OpenAI-compatible and HKUST adapters."""
 
 from __future__ import annotations
 
@@ -55,21 +55,32 @@ class MockProvider:
 class OpenAICompatibleProvider:
     """Calls one configured OpenAI-compatible chat endpoint; credentials stay server-side."""
 
+    def __init__(self, service: str = "openai_compatible") -> None:
+        self.service = service
+
     def respond(self, messages: list[dict[str, str]], context: dict[str, Any]) -> str:
-        base_url = os.getenv("LLM_API_BASE_URL", "").rstrip("/")
-        api_key = os.getenv("LLM_API_KEY", "")
-        model = context["model"] or os.getenv("LLM_MODEL", "")
-        if not (base_url and api_key and model):
-            raise RuntimeError(
-                "Set LLM_API_BASE_URL, LLM_API_KEY, and LLM_MODEL for this provider."
-            )
+        if self.service == "hkust":
+            base_url = os.getenv("HKUST_API_BASE_URL") or "https://hkust.azure-api.net/hkust-genai/v1"
+            api_key = os.getenv("HKUST_API_KEY", "")
+            model = context["model"] or os.getenv("HKUST_MODEL", "")
+            required_settings = "HKUST_API_KEY and HKUST_MODEL (or enter a model in the dashboard)"
+            auth_header = {"api-key": api_key}
+        else:
+            base_url = os.getenv("LLM_API_BASE_URL") or "https://api.openai.com/v1"
+            api_key = os.getenv("LLM_API_KEY", "")
+            model = context["model"] or os.getenv("LLM_MODEL", "")
+            required_settings = "LLM_API_KEY and LLM_MODEL (or enter a model in the dashboard)"
+            auth_header = {"Authorization": f"Bearer {api_key}"}
+        base_url = base_url.rstrip("/")
+        if not (api_key and model):
+            raise RuntimeError(f"Set {required_settings} for this provider.")
         payload = json.dumps(
             {"model": model, "messages": messages, "temperature": context["temperature"]}
         ).encode()
         request = Request(
             f"{base_url}/chat/completions",
             data=payload,
-            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            headers={**auth_header, "Content-Type": "application/json"},
             method="POST",
         )
         with urlopen(request, timeout=60) as response:  # noqa: S310 - configured research endpoint
@@ -80,6 +91,6 @@ class OpenAICompatibleProvider:
 def provider_for(name: str) -> Provider:
     if name == "mock":
         return MockProvider()
-    if name == "openai_compatible":
-        return OpenAICompatibleProvider()
+    if name in {"openai_compatible", "hkust"}:
+        return OpenAICompatibleProvider(name)
     raise ValueError(f"Unknown provider: {name}")

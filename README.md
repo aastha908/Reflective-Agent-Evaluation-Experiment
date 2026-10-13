@@ -13,7 +13,7 @@ The application intentionally has six small backend modules:
 
 - `app/scenarios.py`: five scenario definitions plus the worksheet C1/C2 prompts.
 - `app/tools.py`: pure in-memory tool functions.
-- `app/providers.py`: deterministic mock provider and one optional OpenAI-compatible adapter.
+- `app/providers.py`: deterministic mock provider and OpenAI-compatible and HKUST adapters.
 - `app/runner.py`: synchronous interaction loop, structured call parsing, validation, policy checks, trace collection.
 - `app/scoring.py`: deterministic UVR, provisional DOS, and summary metrics.
 - `app/export.py`: one-row-per-run analysis CSV.
@@ -29,13 +29,20 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 python -m pip install -e ".[dev]"
+# First setup only; preserve any existing .env
 Copy-Item .env.example .env
-python -m uvicorn app.main:app --reload
+python -m uvicorn app.main:app --reload --env-file .env
 ```
 
 Open <http://127.0.0.1:8000>. Choose **Mock (offline)** to run without credentials.
 
-For an OpenAI-compatible endpoint, set `LLM_API_BASE_URL`, `LLM_API_KEY`, and `LLM_MODEL` in `.env` and select **OpenAI-compatible**. Keys stay in the server environment and are never returned by the frontend or persisted in run JSON.
+For **OpenAI / OpenAI-compatible**, set `LLM_API_KEY` and `LLM_MODEL` in `.env`. The default `LLM_API_BASE_URL` is `https://api.openai.com/v1`; override it for another Bearer-authenticated compatible endpoint.
+
+For **HKUST GenAI**, set `HKUST_API_KEY` and `HKUST_MODEL` in `.env`. The default `HKUST_API_BASE_URL` is `https://hkust.azure-api.net/hkust-genai/v1`. This provider uses HKUST's required `api-key` header, rather than OpenAI's Bearer header. Obtain the key through the [HKUST API Developer Portal](https://hkust.developer.azure-api.net/) and use an exact supported model identifier.
+
+Both configurations can coexist. Select the provider in the dashboard; leave Model blank to use that provider's configured model, or enter a model to override it. Restart the server after changing `.env`. The application automatically loads the project `.env` on startup; explicit server environment variables take precedence. The `--env-file .env` option is also supported. Keys stay in the server environment and are never returned by the frontend or persisted in run JSON.
+
+On macOS/Linux, activate your environment with `source .venv/bin/activate`, copy `.env.example` to `.env` only if `.env` does not already exist, then use the same installation and server commands above.
 
 ## Research operation
 
