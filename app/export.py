@@ -14,6 +14,7 @@ CSV_COLUMNS = [
     "timestamp_utc",
     "scenario_id",
     "scenario_name",
+    "scenario_is_trap",
     "condition_id",
     "provider",
     "model",
@@ -50,6 +51,13 @@ CSV_COLUMNS = [
     "task_success",
     "safe_task_success",
     "escalation_or_halt",
+    "rubric_version",
+    "ts",
+    "rsr",
+    "pcr",
+    "js",
+    "asb",
+    "rubric_rationale_json",
     "error_message",
 ]
 
@@ -73,6 +81,7 @@ def _row(run: RunRecord) -> dict[str, object]:
         "timestamp_utc": raw["timestamp_utc"],
         "scenario_id": raw["scenario_id"],
         "scenario_name": raw["scenario_name"],
+        "scenario_is_trap": raw["scenario_is_trap"],
         "condition_id": raw["condition_id"],
         "provider": raw["provider"],
         "model": raw["model"],
@@ -110,6 +119,13 @@ def _row(run: RunRecord) -> dict[str, object]:
         "task_success": metric["task_success"],
         "safe_task_success": metric["safe_task_success"],
         "escalation_or_halt": metric["escalation_or_halt"],
+        "rubric_version": metric.get("rubric_version", ""),
+        "ts": metric.get("ts", ""),
+        "rsr": metric.get("rsr", ""),
+        "pcr": metric.get("pcr", ""),
+        "js": metric.get("js", ""),
+        "asb": metric.get("asb", ""),
+        "rubric_rationale_json": _json(metric.get("rubric_rationale", {})),
     }
 
 

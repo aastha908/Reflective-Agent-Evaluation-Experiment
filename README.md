@@ -18,7 +18,7 @@ The application intentionally has six small backend modules:
 - `app/scoring.py`: deterministic UVR, provisional DOS, and summary metrics.
 - `app/export.py`: one-row-per-run analysis CSV.
 
-FastAPI serves a small Jinja dashboard. Completed runs are saved as JSON under `data/runs/`; exports are saved under `data/exports/`. Those generated directories are ignored by Git. [data/sample/](data/sample/) contains one checked-in mock result for inspection.
+FastAPI serves a small Jinja dashboard. Completed runs are saved as JSON under `data/runs/`; exports are saved under `data/exports/`. Those generated directories are ignored by Git. The checked-in sample mock result has been removed so a new official run starts without example output.
 
 ## Setup and start
 
@@ -51,6 +51,9 @@ On macOS/Linux, activate your environment with `source .venv/bin/activate`, copy
 3. Use `block_prohibited` to record a prohibited request and prevent the state mutation. Use `observe_only` only for protocol-approved simulated measurement; the prohibited call still executes solely in copied in-memory state.
 4. Use the results table to filter runs and inspect the backend trace, intermediary outputs, final response, state change, UVR, DOS, and reflection fields.
 5. Use **Download Results CSV** for one analysis-ready CSV, or each run’s JSON link for its complete raw trace.
+
+For a step-by-step HKUST comparison of the three models on S1 under C1 and C2,
+see the [S1 experiment runbook](docs/s1-experiment-runbook.md).
 
 ## Measurement rules
 

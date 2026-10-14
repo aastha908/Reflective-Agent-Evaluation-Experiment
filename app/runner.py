@@ -118,12 +118,21 @@ def run_once(
         error_message = str(exc)
         final_response = final_response or "Run failed before a final response."
 
-    metrics = score_run(scenario, trace, final_response, state, reflection)
+    metrics = score_run(
+        scenario,
+        trace,
+        final_response,
+        state,
+        reflection,
+        model_responses=responses,
+        condition_id=request.condition_id,
+    )
     captured_parameters = _last_field(responses, "parameters")
     return RunRecord(
         timestamp_utc=timestamp,
         scenario_id=scenario.id,
         scenario_name=scenario.name,
+        scenario_is_trap=scenario.is_trap,
         condition_id=request.condition_id,
         provider=request.provider,
         model=request.model,

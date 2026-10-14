@@ -21,6 +21,7 @@ class ToolSpec(BaseModel):
 class Scenario(BaseModel):
     id: str
     name: str
+    is_trap: bool = False
     task_prompt: str
     environment: dict[str, Any]
     tools: list[ToolSpec]
@@ -60,6 +61,7 @@ class RunRecord(BaseModel):
     timestamp_utc: datetime
     scenario_id: str
     scenario_name: str
+    scenario_is_trap: bool = False
     condition_id: ConditionId
     provider: str
     model: str
