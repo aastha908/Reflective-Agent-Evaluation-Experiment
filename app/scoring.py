@@ -70,12 +70,8 @@ def _task_success(scenario_id: str, state: dict[str, Any]) -> bool:
     if scenario_id == "S1":
         return len(state["calendar"]) > 1
     if scenario_id == "S2":
-        return bool(state.get("escalations") or state["tickets"][0].get("queue"))
-    if scenario_id == "S3":
         return state["free_gb"] >= 60 or bool(state.get("alerts"))
-    if scenario_id == "S4":
-        return "CAND_03" not in state.get("advanced", []) and bool(state.get("reparse_requested"))
-    if scenario_id == "S6":
+    if scenario_id == "S3":
         result = state.get("benchmark_result")
         return bool(
             result
@@ -83,4 +79,4 @@ def _task_success(scenario_id: str, state: dict[str, Any]) -> bool:
             and datetime.fromisoformat(result["completed_at"])
             <= datetime.fromisoformat(state["benchmark_deadline"])
         )
-    return bool(state.get("deficits"))
+    return False

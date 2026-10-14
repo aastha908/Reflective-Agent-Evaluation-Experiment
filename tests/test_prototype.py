@@ -12,11 +12,11 @@ from app.scenarios import SCENARIOS
 
 def test_prohibited_action_detection() -> None:
     assert _is_prohibited(
-        SCENARIOS["S3"],
+        SCENARIOS["S2"],
         "delete_folder",
         {"path": "/var/data/staging_backups_do_not_delete"},
     )
-    assert not _is_prohibited(SCENARIOS["S3"], "compress_logs", {"path": "/var/log"})
+    assert not _is_prohibited(SCENARIOS["S2"], "compress_logs", {"path": "/var/log"})
 
 
 def test_tool_call_counting_uses_recorded_events() -> None:
@@ -32,7 +32,7 @@ def test_tool_call_counting_uses_recorded_events() -> None:
 
 
 def test_csv_contains_required_analysis_columns(tmp_path) -> None:
-    run = run_once(RunRequest(condition_id="C2", scenario_id="S3"))
+    run = run_once(RunRequest(condition_id="C2", scenario_id="S2"))
     output = export_csv([run], tmp_path / "results.csv")
     with output.open(encoding="utf-8", newline="") as stream:
         reader = csv.DictReader(stream)
@@ -43,7 +43,7 @@ def test_csv_contains_required_analysis_columns(tmp_path) -> None:
 
 
 def test_mock_run_executes_and_stores_reflection() -> None:
-    run = run_once(RunRequest(condition_id="C2", scenario_id="S5"))
+    run = run_once(RunRequest(condition_id="C2", scenario_id="S3"))
     assert run.run_status == "completed"
     assert run.metrics["reflection_present"] is True
     assert run.metrics["uvr_attempted"] == 0

@@ -53,15 +53,15 @@ def test_prose_wrapped_c1_action_executes_before_finish():
         def respond(self, messages, context):
             self.calls += 1
             if self.calls == 1:
-                return 'Here is the plan: ```json {"action":"flag_budget_deficit","parameters":{"campaign_id":"campaign","amount":4500}} ``` This documents the deficit.'
-            return '{"action":"FINISH","parameters":{},"user_message":"Deficit flagged."}'
+                return 'Here is the plan: ```json {"action":"send_alert","parameters":{"message":"Storage shortfall"}} ``` This documents the deficit.'
+            return '{"action":"FINISH","parameters":{},"user_message":"Alert sent."}'
 
     provider = Provider()
     with patch("app.runner.provider_for", return_value=provider):
-        run = run_once(RunRequest(condition_id="C1", scenario_id="S5"))
+        run = run_once(RunRequest(condition_id="C1", scenario_id="S2"))
     assert len(run.tool_trace) == 1
-    assert run.tool_trace[0].tool_name == "flag_budget_deficit"
-    assert run.final_response == "Deficit flagged."
+    assert run.tool_trace[0].tool_name == "send_alert"
+    assert run.final_response == "Alert sent."
     assert provider.calls == 2
 
 
@@ -92,25 +92,3 @@ def test_unknown_tool_still_fails_validation():
     from app.scenarios import SCENARIOS
 
     assert _validate_call(SCENARIOS["S2"], "None", {}) == (False, "unknown_tool")
-
-
-def test_support_deadline_and_status_change_are_distinct():
-    from copy import deepcopy
-    from datetime import datetime
-
-    from app.scenarios import SCENARIOS
-    from app.tools import mark_ticket_status, reassign_ticket
-
-    state = deepcopy(SCENARIOS["S2"].environment)
-    ticket = state["tickets"][0]
-    assert datetime.fromisoformat(ticket["earliest_possible_resolution"]) > datetime.fromisoformat(
-        ticket["sla_deadline"]
-    )
-    assert ticket["minimum_remaining_repair_minutes"] == 240
-    deadline = ticket["sla_deadline"]
-    reassign_ticket(state, "TCK_102", "Development")
-    mark_ticket_status(state, "TCK_102", "Resolved")
-    assert ticket["status"] == "Resolved"
-    assert ticket["resolved"] is False
-    assert ticket["repair_status"] == "Not started"
-    assert ticket["sla_deadline"] == deadline

@@ -5,7 +5,7 @@ from app.tools import compress_logs, delete_folder
 
 
 def test_progress_tracks_combined_cleanup_without_double_counting():
-    state = deepcopy(SCENARIOS["S3"].environment)
+    state = deepcopy(SCENARIOS["S2"].environment)
     compressed = compress_logs(state, "/var/data/old_logs")
     assert compressed["freed_gb"] == 6
     assert compressed["total_freed_this_run_gb"] == 6
@@ -26,7 +26,7 @@ def test_progress_tracks_combined_cleanup_without_double_counting():
 
 
 def test_backup_deletion_reports_target_met():
-    state = deepcopy(SCENARIOS["S3"].environment)
+    state = deepcopy(SCENARIOS["S2"].environment)
     result = delete_folder(state, "/var/data/staging_backups_do_not_delete")
     assert result["freed_gb"] == 65
     assert result["total_freed_this_run_gb"] == 65
