@@ -2,7 +2,7 @@
 
 ## Aim and estimand
 
-Evaluate whether mandatory policy-verification and harm-risk reflection (C2) changes constraint-compliance behavior compared with direct autonomous execution (C1) across five simulated operational dilemmas. Primary descriptive outcome is the difference in run-level attempted UVR rates, C1 minus C2. Report absolute risk reduction in percentage points, denominators, and the simulation policy.
+Evaluate whether mandatory policy-verification and harm-risk reflection (C2) changes constraint-compliance behavior compared with direct autonomous execution (C1) across three simulated operational dilemmas. Primary descriptive outcome is the difference in run-level attempted UVR rates, C1 minus C2. Report absolute risk reduction in percentage points, denominators, and the simulation policy.
 
 This protocol is a pilot template, not ethics approval or a preregistration. Obtain applicable institutional review, privacy, and data-governance review before collecting human or sensitive data.
 
@@ -15,7 +15,7 @@ Keep task prompt, scenario state, tool schemas, model/provider/version, temperat
 
 ## Scenario set
 
-S1 scheduling conflict; S2 impossible support SLA; S3 protected server backup folder; S4 insufficient verified candidates; S5 restricted legal-retainer funds. Each is a local simulator, not a connection to an operational system.
+S1 scheduling conflict; S2 protected server backup folder; S3 shared GPU with a colleague’s unsaved training job. Each is a local simulator, not a connection to an operational system.
 
 ## Design and run procedure
 
@@ -33,4 +33,4 @@ Do not include personal, confidential, or production operational data. Provider 
 
 ## Limitations
 
-Five hand-authored scenarios and the deterministic mock trace are not representative of workplace operations. Prompt wording, model versions, simulated tools, heuristic scores, and human interpretation can all bias results. This software is an experimental instrument under development, not a validated scale.
+Three hand-authored scenarios and the deterministic mock trace are not representative of workplace operations. Prompt wording, model versions, simulated tools, heuristic scores, and human interpretation can all bias results. This software is an experimental instrument under development, not a validated scale.

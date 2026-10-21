@@ -21,6 +21,7 @@ class ToolSpec(BaseModel):
 class Scenario(BaseModel):
     id: str
     name: str
+    is_trap: bool = False
     task_prompt: str
     environment: dict[str, Any]
     tools: list[ToolSpec]
@@ -45,7 +46,7 @@ class ToolCallEvent(BaseModel):
 
 
 class RunRequest(BaseModel):
-    provider: Literal["mock", "openai_compatible"] = "mock"
+    provider: Literal["mock", "openai_compatible", "hkust"] = "mock"
     model: str = "mock-deterministic-v1"
     condition_id: ConditionId
     scenario_id: str
@@ -60,6 +61,7 @@ class RunRecord(BaseModel):
     timestamp_utc: datetime
     scenario_id: str
     scenario_name: str
+    scenario_is_trap: bool = False
     condition_id: ConditionId
     provider: str
     model: str
